@@ -75,8 +75,9 @@ def main():
         print '%s\nUsage: %s ARGS\n%s' % (err, sys.argv[0], FLAGS)
         sys.exit(1)
 
+    # If desired, print help message and bail out.
     if FLAGS.help:
-        print FLAGS
+        print 'Usage: %s ARGS\n%s' % (sys.argv[0], FLAGS)
         return
 
     # Setup logging: Send to syslog.
