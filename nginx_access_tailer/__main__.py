@@ -92,7 +92,7 @@ def main():
     if FLAGS.mode == 'create_metric':
         create_metric(FLAGS.http_response_metric_name)
         return
-    else:
+    elif FLAGS.mode == 'delete_metric':
         delete_metric(FLAGS.http_response_metric_name)
         return
 
