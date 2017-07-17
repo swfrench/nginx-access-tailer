@@ -68,7 +68,11 @@ def delete_metric(metric_name):
 
 def main():
     """Run the tailer."""
-    _ = FLAGS(sys.argv)
+    try:
+        _ = FLAGS(sys.argv)
+    except gflags.FlagsError as err:
+        print '%s\nUsage: %s ARGS\n%s' % (err, sys.argv[0], FLAGS)
+        sys.exit(1)
 
     # Setup logging: Send to syslog.
     logger = logging.getLogger()
