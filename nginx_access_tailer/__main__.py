@@ -14,15 +14,7 @@ from . import InstanceMetadata, NginxAccessLogConsumer, NginxAccessLogTailer
 FLAGS = gflags.FLAGS
 gflags.DEFINE_string('access_log', '/var/log/nginx/access.log',
                      'Nginx access log file.')
-gflags.DEFINE_float('polling_period_s', 30.0,
-                    'Time between periodic log tail checks.')
-gflags.DEFINE_float(
-    'rotation_check_idle_time_s', 120.0,
-    'How long to wait after seeing no further log lines in the '
-    'tailed file before starting rotation checks.')
-gflags.DEFINE_float('rotation_check_period_s', 60.0,
-                    'Period between rotation checks on attempts to retrieve '
-                    'log lines (unsuccessfully) from an idle log file.')
+gflags.DEFINE_boolean('help', False, 'Display help text and exit.')
 gflags.DEFINE_string(
     'http_response_metric_name', 'custom.googleapis.com/http_response_count',
     'Name of the custom stackdriver metric you would like to use, including '
@@ -33,6 +25,15 @@ gflags.DEFINE_enum(
     'custom metric (default); create_metric - create a new '
     'custom metric appropriate for use with this script; '
     'delete_metric - delete the custom metric from stackdriver.')
+gflags.DEFINE_float('polling_period_s', 30.0,
+                    'Time between periodic log tail checks.')
+gflags.DEFINE_float(
+    'rotation_check_idle_time_s', 120.0,
+    'How long to wait after seeing no further log lines in the '
+    'tailed file before starting rotation checks.')
+gflags.DEFINE_float('rotation_check_period_s', 60.0,
+                    'Period between rotation checks on attempts to retrieve '
+                    'log lines (unsuccessfully) from an idle log file.')
 
 
 def create_metric(metric_name):
@@ -73,6 +74,10 @@ def main():
     except gflags.FlagsError as err:
         print '%s\nUsage: %s ARGS\n%s' % (err, sys.argv[0], FLAGS)
         sys.exit(1)
+
+    if FLAGS.help:
+        print FLAGS
+        return
 
     # Setup logging: Send to syslog.
     logger = logging.getLogger()
