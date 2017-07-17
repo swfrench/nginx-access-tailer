@@ -6,6 +6,8 @@ import sys
 
 import gflags
 from google.cloud import monitoring
+from google.cloud.monitoring import MetricKind, ValueType
+from google.cloud.monitoring import LabelDescriptor, LabelValueType
 
 from . import InstanceMetadata, NginxAccessLogConsumer, NginxAccessLogTailer
 
@@ -23,7 +25,45 @@ gflags.DEFINE_float('rotation_check_period_s', 60.0,
                     'log lines (unsuccessfully) from an idle log file.')
 gflags.DEFINE_string(
     'http_response_metric_name', 'custom.googleapis.com/http_response_count',
-    'Name of the custom stackdriver metric you would like to use.')
+    'Name of the custom stackdriver metric you would like to use, including '
+    'the stackdriver custom metric prefix.')
+gflags.DEFINE_enum(
+    'mode', 'export', ['export', 'create_metric', 'delete_metric'],
+    'Mode of operation: export - export response counts to '
+    'custom metric (default); create_metric - create a new '
+    'custom metric appropriate for use with this script; '
+    'delete_metric - delete the custom metric from stackdriver.')
+
+
+def create_metric(metric_name):
+    """Create the custom HTTP response by status count metric.
+
+    Args:
+      metric_name: the name (including prefix) of the response count metric to create.
+    """
+    client = monitoring.Client()
+    label = LabelDescriptor(
+        'response_code', LabelValueType.INT64, description='HTTP status code')
+    descriptor = client.metric_descriptor(
+        metric_name,
+        metric_kind=MetricKind.CUMULATIVE,
+        value_type=ValueType.INT64,
+        labels=[label],
+        description='Cumulative count of HTTP responses by status code.')
+    descriptor.create()
+    logging.info('Created metric: %s', metric_name)
+
+
+def delete_metric(metric_name):
+    """Delete the custom metric.
+
+    Args:
+      metric_name: the name (including prefix) of the custom metric to delete.
+    """
+    client = monitoring.Client()
+    descriptor = client.metric_descriptor(metric_name)
+    descriptor.delete()
+    logging.info('Deleted metric: %s', metric_name)
 
 
 def main():
@@ -38,6 +78,14 @@ def main():
         '%(levelname)s nginx-access-tailer %(asctime)s] %(message)s')
     handler.setFormatter(fmt)
     logger.addHandler(handler)
+
+    # Handle other modes of operation:
+    if FLAGS.mode == 'create_metric':
+        create_metric(FLAGS.http_response_metric_name)
+        return
+    else:
+        delete_metric(FLAGS.http_response_metric_name)
+        return
 
     # Fetch required metadata.
     meta = InstanceMetadata()
