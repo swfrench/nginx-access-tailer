@@ -8,7 +8,7 @@ class InstanceMetadata(object):
 
     BASE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance'
 
-    def _fetch(self, entry):
+    def fetch(self, entry):
         """Fetch the requested instance metadata entry."""
         request = urllib2.Request(
             url='%s/%s' % (self.BASE_URL, entry),
@@ -21,11 +21,11 @@ class InstanceMetadata(object):
 
     def instance_id(self):
         """Fetch the instance id."""
-        return self._fetch('id')
+        return self.fetch('id')
 
     def instance_zone(self, shorten=True):
         """Fetch the instance zone."""
-        zone = self._fetch('zone')
+        zone = self.fetch('zone')
         if zone is not None and shorten:
             zone = zone.split('/')[-1]
         return zone

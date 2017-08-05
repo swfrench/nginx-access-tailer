@@ -1,6 +1,6 @@
 """TODO."""
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='nginx-access-tailer',
@@ -16,4 +16,6 @@ setup(
         'python-gflags >= 3.1.1',
         'google-cloud-monitoring >= 0.25.0',
     ],
+    test_suite='nose.collector',
+    tests_require=['nose', 'mock'],
 )
