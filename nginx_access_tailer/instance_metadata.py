@@ -9,13 +9,20 @@ class InstanceMetadata(object):
     BASE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance'
 
     def fetch(self, entry):
-        """Fetch the requested instance metadata entry."""
+        """Fetch the requested instance metadata entry.
+
+        Args:
+          entry: entry name relative to the computeMetadata/v1/instance prefix
+
+        Returns:
+          The value read from the metadata service or None on error.
+        """
         request = urllib2.Request(
             url='%s/%s' % (self.BASE_URL, entry),
             headers={'Metadata-Flavor': 'Google'})
         try:
             instance_id = urllib2.urlopen(request).read()
-        except:
+        except urllib2.URLError:
             instance_id = None
         return instance_id
 
