@@ -44,8 +44,9 @@ class NginxAccessLogConsumer(object):
         """
         self._client = client
         self._resource = resource
-        self._reset_time = None
-        self._reset_time_internal = None
+        self._reset_time_utc = datetime.utcnow()
+        self._reset_time_utc_offset = self._reset_time_utc.replace(
+            tzinfo=_FixedOffsetTimeZone(0))
         self._response_codes = {}
         self._response_code_metrics = {}
         self._has_delta = False
@@ -58,11 +59,22 @@ class NginxAccessLogConsumer(object):
           ts_str: nginx format timestamp string '02/Jul/2017:00:00:00 +0000'
 
         Returns:
-          datetime object.
+          datetime object or None if the timestamp could not be parsed.
         """
-        base, offset = ts_str.split(' ')
-        base_dt = datetime.strptime(base, self.NGINX_BASE_TIMESTAMP_FORMAT)
+        try:
+            base, offset = ts_str.split(' ')
+            base_dt = datetime.strptime(base, self.NGINX_BASE_TIMESTAMP_FORMAT)
+        except ValueError:
+            return None
         return base_dt.replace(tzinfo=_FixedOffsetTimeZone(int(offset)))
+
+    def reset_time_utc(self):
+        """Returns the time relative to which metric counters are registered.
+
+        Returns:
+          datetime object relative to UTC (no tzinfo).
+        """
+        return self._reset_time_utc
 
     def record(self, parsed_groups):
         """Record supported metrics from the parsed log line.
@@ -72,12 +84,18 @@ class NginxAccessLogConsumer(object):
             line; only relevant fields are datetime and statuscode.
         """
         log_time = self._parse_nginx_timestamp(parsed_groups['datetime'])
-        if self._reset_time is None:
-            self._reset_time = datetime.utcnow()
-            self._reset_time_internal = datetime.now(log_time.tzinfo)
-        if log_time < self._reset_time_internal:
+        if log_time is None:
+            logging.warn('Could not parse datetime: "%s"',
+                         parsed_groups['datetime'])
             return
-        code = int(parsed_groups['statuscode'])
+        if log_time < self._reset_time_utc_offset:
+            return
+        try:
+            code = int(parsed_groups['statuscode'])
+        except ValueError:
+            logging.warn('Could not parse statuscode: "%s"',
+                         parsed_groups['statuscode'])
+            return
         if code not in self._response_codes:
             self._response_codes[code] = 0
         self._response_codes[code] += 1
@@ -98,5 +116,5 @@ class NginxAccessLogConsumer(object):
                     self._response_code_metrics[code],
                     self._resource,
                     count,
-                    start_time=self._reset_time)
+                    start_time=self._reset_time_utc)
             self._has_delta = False
