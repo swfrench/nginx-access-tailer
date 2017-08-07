@@ -6,7 +6,7 @@ import re
 import time
 
 
-class _SimpleTailer(object):
+class SimpleTailer(object):
     """A simple file tailer supporting basic log rotation detection."""
 
     def __init__(self,
@@ -91,7 +91,7 @@ class NginxAccessLogTailer(object):
     NGINX_ACCESS_LOG_RE = (
         r'(?P<ipaddress>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) - - '
         r'\[(?P<datetime>\d{2}\/[A-Z,a-z]{3}\/\d{4}:\d{2}:\d{2}:\d{2} '
-        r'(\+|\-)\d{4})\] ((\"(GET|POST) )(?P<url>.+ )(HTTP\/1\.1")) '
+        r'(\+|\-)\d{4})\] ((\"(GET|POST) )(?P<url>.+) (HTTP\/1\.1")) '
         r'(?P<statuscode>\d{3}) .*')
 
     def __init__(self, log_file, consumer, rotation_check_idle_time_s,
@@ -104,11 +104,11 @@ class NginxAccessLogTailer(object):
             which takes a parsed access log line, and a commit method, which
             writes metrics to stackdriver.
           rotation_check_idle_time_s: min log idle time before starting
-            rotation checks (see _SimpleTailer).
+            rotation checks (see SimpleTailer).
           rotation_check_period_s: min period between rotation checks (see
-            _SimpleTailer).
+            SimpleTailer).
         """
-        self._tailer = _SimpleTailer(
+        self._tailer = SimpleTailer(
             log_file,
             rotation_check_idle_time_s=rotation_check_idle_time_s,
             rotation_check_period_s=rotation_check_period_s)
